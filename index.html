@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mitescu Household Finance</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0f0f11;
+    --bg2: #16161a;
+    --bg3: #1e1e24;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8e8f0;
+    --text2: #8888a0;
+    --text3: #555568;
+    --accent: #6c63ff;
+    --accent2: #9d97ff;
+    --green: #22c87a;
+    --red: #ff5c5c;
+    --amber: #f5a623;
+    --blue: #4a9eff;
+    --purple: #b47cff;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Layout ── */
+  .app { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 0;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+  }
+
+  .sidebar-logo {
+    padding: 0 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+  }
+  .sidebar-logo .wordmark {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .sidebar-logo .name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 1.25rem;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    border-radius: 0;
+    transition: color .15s, background .15s;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,.04); }
+  .nav-item.active { color: var(--accent2); background: rgba(108,99,255,.1); }
+  .nav-icon { width: 16px; text-align: center; font-size: 14px; flex-shrink: 0; }
+
+  .nav-section {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 1rem 1.25rem .4rem;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+  .settings-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text3);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 6px 0;
+    width: 100%;
+  }
+  .settings-btn:hover { color: var(--text2); }
+
+  .main {
+    margin-left: 220px;
+    flex: 1;
+    padding: 2rem;
+    max-width: 1100px;
+  }
+
+  /* ── Pages ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── Page header ── */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .page-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .page-sub {
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 1rem;
+  }
+
+  /* ── KPI grid ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+  .kpi {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+  }
+  .kpi-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .kpi-value {
+    font-size: 22px;
+    font-weight: 600;
+    font-family: var(--mono);
+  }
+  .kpi-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+  .warn { color: var(--amber); }
+  .neu { color: var(--text2); }
+
+  /* ── Grid layouts ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* ── Data rows ── */
+  .data-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    gap: 8px;
+  }
+  .data-row:last-child { border-bottom: none; }
+  .data-label { color: var(--text2); flex: 1; }
+  .data-value { font-family: var(--mono); font-weight: 500; white-space: nowrap; }
+
+  /* ── Category bars ── */
+  .cat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .cat-item:last-child { border-bottom: none; }
+  .cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .cat-name { flex: 1; font-size: 13px; color: var(--text); }
+  .cat-sub { font-size: 11px; color: var(--text3); }
+  .cat-bar-wrap { width: 120px; height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+  .cat-bar { height: 100%; border-radius: 2px; transition: width .4s ease; }
+  .cat-amount { font-family: var(--mono); font-size: 13px; font-weight: 500; min-width: 72px; text-align: right; }
+  .cat-pct { font-family: var(--mono); font-size: 11px; color: var(--text3); min-width: 36px; text-align: right; }
+
+  /* ── Budget pills ── */
+  .budget-pill {
+    font-size: 10px;
+    font-family: var(--mono);
+    padding: 2px 7px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .bp-ok { background: rgba(34,200,122,.12); color: var(--green); }
+  .bp-warn { background: rgba(245,166,35,.12); color: var(--amber); }
+  .bp-over { background: rgba(255,92,92,.12); color: var(--red); }
+  .bp-na { background: rgba(255,255,255,.05); color: var(--text3); }
+
+  /* ── Upload area ── */
+  .upload-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .bank-upload {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+  }
+  .bank-upload:hover { border-color: var(--border2); background: rgba(255,255,255,.03); }
+  .bank-upload.uploaded { border-color: var(--green); background: rgba(34,200,122,.05); }
+  .bank-upload.missing { border-color: rgba(255,92,92,.3); }
+
+  .bank-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+  .bank-country { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: .06em; margin-bottom: 8px; }
+  .bank-status { font-size: 11px; }
+  .bank-status.ok { color: var(--green); }
+  .bank-status.pending { color: var(--text3); }
+  .bank-file-input { display: none; }
+
+  .upload-indicator {
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+  .ui-ok { background: var(--green); }
+  .ui-pending { background: var(--text3); }
+
+  /* ── Month selector ── */
+  .month-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .month-tab {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: .04em;
+  }
+  .month-tab:hover { color: var(--text2); border-color: var(--border2); }
+  .month-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .month-tab.has-data { border-color: rgba(108,99,255,.4); color: var(--accent2); }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: var(--sans);
+    cursor: pointer;
+    border: none;
+    transition: all .15s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #7d75ff; }
+  .btn-primary:disabled { background: var(--bg3); color: var(--text3); cursor: default; }
+  .btn-ghost { background: none; border: 1px solid var(--border2); color: var(--text2); }
+  .btn-ghost:hover { background: rgba(255,255,255,.04); color: var(--text); }
+  .btn-danger { background: rgba(255,92,92,.1); border: 1px solid rgba(255,92,92,.2); color: var(--red); }
+
+  /* ── Alert ── */
+  .alert {
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .alert-warn { background: rgba(245,166,35,.08); border: 1px solid rgba(245,166,35,.2); color: var(--amber); }
+  .alert-ok { background: rgba(34,200,122,.08); border: 1px solid rgba(34,200,122,.2); color: var(--green); }
+  .alert-info { background: rgba(74,158,255,.08); border: 1px solid rgba(74,158,255,.2); color: var(--blue); }
+
+  /* ── Progress bars ── */
+  .prog-wrap { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; margin: 6px 0 3px; }
+  .prog-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+
+  /* ── Tag ── */
+  .tag {
+    font-size: 10px;
+    font-family: var(--mono);
+    padding: 2px 8px;
+    border-radius: 10px;
+    display: inline-block;
+  }
+  .tag-green { background: rgba(34,200,122,.1); color: var(--green); }
+  .tag-red { background: rgba(255,92,92,.1); color: var(--red); }
+  .tag-amber { background: rgba(245,166,35,.1); color: var(--amber); }
+  .tag-blue { background: rgba(74,158,255,.1); color: var(--blue); }
+  .tag-purple { background: rgba(180,124,255,.1); color: var(--purple); }
+
+  /* ── Settings modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 2rem;
+    width: 480px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-title { font-size: 18px; font-weight: 600; margin-bottom: .25rem; }
+  .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 1.5rem; }
+  .form-group { margin-bottom: 1.25rem; }
+  .form-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: block; font-family: var(--mono); letter-spacing: .04em; }
+  .form-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: var(--mono);
+    outline: none;
+  }
+  .form-input:focus { border-color: var(--accent); }
+
+  /* ── Loading spinner ── */
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,.1);
+    border-top-color: var(--accent2);
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Debt bars ── */
+  .debt-item { margin-bottom: 1.25rem; }
+  .debt-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+  .debt-name { font-size: 13px; font-weight: 500; }
+  .debt-meta { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+  /* ── Timeline ── */
+  .timeline-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .timeline-item:last-child { border-bottom: none; }
+  .tl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .tl-date { font-family: var(--mono); font-size: 11px; color: var(--text3); min-width: 64px; padding-top: 2px; }
+  .tl-body { flex: 1; color: var(--text2); line-height: 1.5; }
+  .tl-amt { font-family: var(--mono); font-size: 13px; font-weight: 500; white-space: nowrap; }
+
+  /* ── RSU progress ── */
+  .rsu-prog { margin-bottom: 14px; }
+  .rsu-lbl { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 5px; }
+
+  /* ── Chart wrapper ── */
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 2px; }
+
+  /* ── No API key warning ── */
+  .no-key-banner {
+    background: rgba(245,166,35,.08);
+    border: 1px solid rgba(245,166,35,.2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--amber);
+    margin-bottom: 1.5rem;
+    display: none;
+    cursor: pointer;
+  }
+  .no-key-banner.show { display: flex; gap: 8px; align-items: center; }
+
+  /* ── Upload progress ── */
+  .analysis-log {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    margin-top: 1rem;
+  }
+  .analysis-log.show { display: block; }
+  .log-line { padding: 2px 0; }
+  .log-line.ok { color: var(--green); }
+  .log-line.err { color: var(--red); }
+  .log-line.info { color: var(--accent2); }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="wordmark">Household Finance</div>
+    <div class="name">Mitescu Family</div>
+  </div>
+
+  <div class="nav-section">Dashboard</div>
+  <button class="nav-item active" onclick="nav('overview',this)">
+    <span class="nav-icon">◈</span> Overview
+  </button>
+  <button class="nav-item" onclick="nav('spending',this)">
+    <span class="nav-icon">◉</span> Spending
+  </button>
+  <button class="nav-item" onclick="nav('monthly',this)">
+    <span class="nav-icon">▤</span> Monthly
+  </button>
+  <button class="nav-item" onclick="nav('savings',this)">
+    <span class="nav-icon">◎</span> Opportunities
+  </button>
+
+  <div class="nav-section">Finance</div>
+  <button class="nav-item" onclick="nav('debts',this)">
+    <span class="nav-icon">⬡</span> Debts
+  </button>
+  <button class="nav-item" onclick="nav('rsu',this)">
+    <span class="nav-icon">◆</span> RSU Plan
+  </button>
+  <button class="nav-item" onclick="nav('plan',this)">
+    <span class="nav-icon">▷</span> 2026 Plan
+  </button>
+
+  <div class="nav-section">Data</div>
+  <button class="nav-item" onclick="nav('upload',this)">
+    <span class="nav-icon">⊕</span> Upload Statements
+  </button>
+  <button class="nav-item" onclick="nav('advisor',this)">
+    <span class="nav-icon">◈</span> AI Advisor
+  </button>
+
+  <div class="sidebar-footer">
+    <button class="settings-btn" onclick="openSettings()">
+      ⚙ Settings &amp; API Key
+    </button>
+  </div>
+</nav>
+
+<!-- Main -->
+<main class="main">
+  <div class="no-key-banner" id="noKeyBanner" onclick="openSettings()">
+    ⚠ No API key set — upload and AI features disabled. Click to add your key.
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="page active" id="pg-overview">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Overview</div>
+        <div class="page-sub" id="overviewPeriod">Loading household data...</div>
+      </div>
+      <button class="btn btn-ghost" onclick="nav('upload', document.querySelector('.nav-item:nth-child(10)'))">+ Upload statements</button>
+    </div>
+
+    <div class="kpi-grid" id="overviewKpis">
+      <div class="kpi"><div class="kpi-label">Gross income / mo</div><div class="kpi-value pos">€9,858</div><div class="kpi-sub">Razvan + Paula + rental</div></div>
+      <div class="kpi"><div class="kpi-label">Total outflows / mo</div><div class="kpi-value neg">€10,690</div><div class="kpi-sub">all categories incl. rent</div></div>
+      <div class="kpi"><div class="kpi-label">Monthly deficit</div><div class="kpi-value neg">-€832</div><div class="kpi-sub">covered by RSU + bonus</div></div>
+      <div class="kpi"><div class="kpi-label">RSU unvested</div><div class="kpi-value">$77,545</div><div class="kpi-sub">184 shares · 5 awards</div></div>
+      <div class="kpi"><div class="kpi-label">Total debt</div><div class="kpi-value neg">~€117k</div><div class="kpi-sub">excl. brother loan</div></div>
+      <div class="kpi"><div class="kpi-label">RO rental</div><div class="kpi-value pos">€1,000</div><div class="kpi-sub">Bogdan Popa · to 2031</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Monthly income breakdown</div>
+        <div class="data-row"><span class="data-label">Razvan MSFT salary (net)</span><span class="data-value neu">~€5,300</span></div>
+        <div class="data-row"><span class="data-label">Paula FullScreen Digital</span><span class="data-value neu">€3,500</span></div>
+        <div class="data-row"><span class="data-label">RO rental (Bogdan Popa)</span><span class="data-value pos">€1,000</span></div>
+        <div class="data-row"><span class="data-label">RO child allowance (Casian)</span><span class="data-value neu">~€58</span></div>
+        <div class="data-row" style="margin-top:6px;padding-top:12px;border-top:1px solid var(--border2)">
+          <span class="data-label" style="font-weight:600;color:var(--text)">Total gross</span>
+          <span class="data-value pos" style="font-size:16px">€9,858</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Key fixed outflows</div>
+        <div class="data-row"><span class="data-label">Rent — Parque das Nações</span><span class="data-value neg">€2,477</span></div>
+        <div class="data-row"><span class="data-label">Education (Casian total avg)</span><span class="data-value neg">~€978</span></div>
+        <div class="data-row"><span class="data-label">DoTerra (wellness)</span><span class="data-value neg">~€806</span></div>
+        <div class="data-row"><span class="data-label">Paula RO obligations</span><span class="data-value neg">€752</span></div>
+        <div class="data-row"><span class="data-label">IRS provision (savings)</span><span class="data-value warn">€700</span></div>
+        <div class="data-row"><span class="data-label">All debt payments</span><span class="data-value neg">~€1,460</span></div>
+        <div class="data-row" style="margin-top:6px;padding-top:12px;border-top:1px solid var(--border2)">
+          <span class="data-label" style="font-weight:600;color:var(--text)">Total outflows</span>
+          <span class="data-value neg" style="font-size:16px">~€10,690</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Deficit explained — why it's manageable</div>
+      <div class="data-row"><span class="data-label">Monthly deficit on regular expenses</span><span class="data-value neg">-€832</span></div>
+      <div class="data-row"><span class="data-label">Annual RSU vests (3 vests 2026)</span><span class="data-value pos">~€19,330</span></div>
+      <div class="data-row"><span class="data-label">Annual MSFT bonus (est.)</span><span class="data-value pos">~€8,000</span></div>
+      <div class="data-row"><span class="data-label">Annual deficit to cover</span><span class="data-value neg">-€9,984</span></div>
+      <div class="data-row"><span class="data-label">RSU + bonus after 2026 commitments</span><span class="data-value pos">~€13,330</span></div>
+      <div class="data-row" style="margin-top:6px;padding-top:12px;border-top:1px solid var(--border2)">
+        <span class="data-label" style="font-weight:600;color:var(--text)">Annual true surplus (incl. RSU+bonus)</span>
+        <span class="data-value pos" style="font-size:15px">~€3,346</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Monthly P&L — last 6 months</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="plChart" role="img" aria-label="Monthly P&L chart">Monthly income vs outflows</canvas></div>
+      <div style="display:flex;gap:16px;margin-top:.75rem;flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><span style="width:10px;height:3px;background:var(--green);display:inline-block;border-radius:2px"></span>Income</span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><span style="width:10px;height:3px;background:var(--red);display:inline-block;border-radius:2px"></span>Outflows</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPENDING -->
+  <div class="page" id="pg-spending">
+    <div class="page-header">
+      <div><div class="page-title">Spending</div><div class="page-sub">Category breakdown · all accounts combined</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">By category — monthly average · corrected &amp; verified</div>
+      <div id="catList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Spending chart</div>
+      <div class="chart-wrap" style="height:320px"><canvas id="spendChart" role="img" aria-label="Spending by category bar chart">Spending categories</canvas></div>
+    </div>
+  </div>
+
+  <!-- MONTHLY -->
+  <div class="page" id="pg-monthly">
+    <div class="page-header">
+      <div><div class="page-title">Monthly view</div><div class="page-sub">Select a month to see detailed breakdown</div></div>
+    </div>
+
+    <div class="month-tabs" id="monthTabs"></div>
+
+    <div id="monthDetail">
+      <div class="alert alert-info">
+        <span>ℹ</span> Select a month above to view the detailed breakdown. Upload statements in the Upload section to populate data.
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVINGS OPPORTUNITIES -->
+  <div class="page" id="pg-savings">
+    <div class="page-header">
+      <div><div class="page-title">Savings opportunities</div><div class="page-sub">Identified from your spending patterns</div></div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Current deficit</div><div class="kpi-value neg">-€832/mo</div></div>
+      <div class="kpi"><div class="kpi-label">Savings potential</div><div class="kpi-value pos">€300–400/mo</div><div class="kpi-sub">realistic, no lifestyle hit</div></div>
+      <div class="kpi"><div class="kpi-label">Interest wasted/mo</div><div class="kpi-value neg">~€698</div><div class="kpi-sub">on all debts combined</div></div>
+      <div class="kpi"><div class="kpi-label">After all savings</div><div class="kpi-value warn">~-€388/mo</div><div class="kpi-sub">much more manageable</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Priority actions</div>
+
+      <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-weight:500;font-size:14px">1 · Clear CGD Gold card (~€1,200)</span>
+          <span class="tag tag-red">€20/mo interest saved</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2)">Clear from next salary — immediate saving, easiest win.</div>
+      </div>
+
+      <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-weight:500;font-size:14px">2 · ActivoBank Visa CC — May + Nov RSU</span>
+          <span class="tag tag-red">€159/mo interest saved</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2)">May RSU: €2,960 → CC (saves €50/mo from Jun). Nov RSU: clear entirely (saves €159/mo + €285 min payment from Dec).</div>
+        <div class="prog-wrap" style="margin-top:8px"><div class="prog-fill" style="width:0%;background:var(--red)" id="ccProg"></div></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">€0 cleared of €9,519 target</div>
+      </div>
+
+      <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-weight:500;font-size:14px">3 · Uber Eats — reduce to 1–2 orders/month</span>
+          <span class="tag tag-amber">€65–90/mo saved</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2)">Currently ~€133/mo on food delivery. ~4 orders/month at €35–42 each. Reduce to 1–2 saves €65–90/month.</div>
+      </div>
+
+      <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-weight:500;font-size:14px">4 · Temu — 48-hour rule</span>
+          <span class="tag tag-amber">€60–80/mo saved</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2)">Two impulse sessions of €209 each drove €772 over 6 months. Add to cart, wait 48h before buying.</div>
+      </div>
+
+      <div style="padding:12px 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-weight:500;font-size:14px">5 · Verify Apple not double-paying</span>
+          <span class="tag tag-green">€10/mo saved</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2)">You have Apple on CGD + Paula has Apple €10/mo on RO ING. Check it's one family plan not two separate subscriptions.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Deficit reduction path</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="savingsChart" role="img" aria-label="Deficit reduction waterfall chart">Savings opportunities impact</canvas></div>
+    </div>
+  </div>
+
+  <!-- DEBTS -->
+  <div class="page" id="pg-debts">
+    <div class="page-header">
+      <div><div class="page-title">Debts</div><div class="page-sub">All liabilities tracked · priority order</div></div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Total debt</div><div class="kpi-value neg">~€117,700</div></div>
+      <div class="kpi"><div class="kpi-label">Monthly interest</div><div class="kpi-value neg">~€698</div><div class="kpi-sub">burned every month</div></div>
+      <div class="kpi"><div class="kpi-label">Monthly payments</div><div class="kpi-value neg">~€1,460</div></div>
+      <div class="kpi"><div class="kpi-label">CC cleared by</div><div class="kpi-value pos">Dec 2026</div><div class="kpi-sub">via Nov RSU vest</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Debt tracker — priority order</div>
+      <div id="debtList"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Clearance timeline</div>
+        <div class="data-row"><span class="data-label">CGD Gold card</span><span class="data-value pos">Now (next salary)</span></div>
+        <div class="data-row"><span class="data-label">ING RO credit card</span><span class="data-value pos">Jul 2026</span></div>
+        <div class="data-row"><span class="data-label">ActivoBank Visa CC</span><span class="data-value pos">Dec 2026</span></div>
+        <div class="data-row"><span class="data-label">ActivoBank personal loan</span><span class="data-value warn">~2031</span></div>
+        <div class="data-row"><span class="data-label">Paula ING credit (RO)</span><span class="data-value warn">~2027 (w/ RSUs)</span></div>
+        <div class="data-row"><span class="data-label">Unicredit mortgage</span><span class="data-value warn">~2054 (normal pace)</span></div>
+        <div class="data-row"><span class="data-label">Jemprestes mortgage (new)</span><span class="data-value warn">needed ~2027</span></div>
+        <div class="data-row"><span class="data-label">Brother loan</span><span class="data-value" style="color:var(--text3)">no rush · 0%</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Monthly position if all non-mortgage debt cleared</div>
+        <div class="data-row"><span class="data-label">Current deficit</span><span class="data-value neg">-€832</span></div>
+        <div class="data-row"><span class="data-label">CC payments freed</span><span class="data-value pos">+€285</span></div>
+        <div class="data-row"><span class="data-label">Personal loan freed</span><span class="data-value pos">+€142</span></div>
+        <div class="data-row"><span class="data-label">Paula ING freed</span><span class="data-value pos">+€450</span></div>
+        <div class="data-row"><span class="data-label">Interest saved</span><span class="data-value pos">+€423</span></div>
+        <div class="data-row" style="margin-top:6px;padding-top:12px;border-top:1px solid var(--border2)">
+          <span class="data-label" style="font-weight:600;color:var(--text)">New monthly surplus</span>
+          <span class="data-value pos" style="font-size:15px">+€421</span>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px">Achievable by end of 2027 using RSU vests</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RSU PLAN -->
+  <div class="page" id="pg-rsu">
+    <div class="page-header">
+      <div><div class="page-title">RSU Plan</div><div class="page-sub">Microsoft stock awards · vesting schedule &amp; allocation</div></div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Total unvested</div><div class="kpi-value">$77,545</div><div class="kpi-sub">184 shares · 5 awards</div></div>
+      <div class="kpi"><div class="kpi-label">May 31 vest</div><div class="kpi-value pos">~€6,960</div><div class="kpi-sub">18 shares · 44 days</div></div>
+      <div class="kpi"><div class="kpi-label">Aug 31 vest</div><div class="kpi-value pos">~€6,570</div><div class="kpi-sub">17 shares</div></div>
+      <div class="kpi"><div class="kpi-label">Nov 30 vest</div><div class="kpi-value pos">~€5,800</div><div class="kpi-sub">15 shares</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">2026 vest allocation</div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--red)"></div>
+        <div class="tl-date">May 31</div>
+        <div class="tl-body">Romania trip + wedding €4,000 · ActivoBank CC partial €2,960 → CC reduces €9,519 → €6,559</div>
+        <div class="tl-amt warn">~€6,960</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--purple)"></div>
+        <div class="tl-date">Aug 31</div>
+        <div class="tl-body">Casian school fees €8,500 (Sep due) · gap ~€1,930 covered by May–Aug monthly surplus (~€10,300 available)</div>
+        <div class="tl-amt warn">~€6,570</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--green)"></div>
+        <div class="tl-date">Nov 30</div>
+        <div class="tl-body">Clear ActivoBank Visa CC entirely · saves €159/mo interest + €285/mo min payment = €444/mo freed from Dec 2026</div>
+        <div class="tl-amt pos">~€5,800</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--amber)"></div>
+        <div class="tl-date">Dec bonus</div>
+        <div class="tl-body">Est. €6,000–11,000 · build fund top-up + Paula ING credit lump sum consideration</div>
+        <div class="tl-amt pos">~€8k est.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Award vesting progress</div>
+      <div class="rsu-prog">
+        <div class="rsu-lbl"><span>FY21 — 40 shares (Aug 2021)</span><span class="pos">90% vested</span></div>
+        <div class="prog-wrap"><div class="prog-fill" style="width:90%;background:var(--green)"></div></div>
+        <div style="font-size:11px;color:var(--text3)">36 vested · 4 remaining ($1,686) · next 2 shares May 31</div>
+      </div>
+      <div class="rsu-prog">
+        <div class="rsu-lbl"><span>FY22 — 96 shares (Aug 2022)</span><span class="warn">70% vested</span></div>
+        <div class="prog-wrap"><div class="prog-fill" style="width:70%;background:var(--amber)"></div></div>
+        <div style="font-size:11px;color:var(--text3)">67 vested · 29 remaining ($12,222) · next 5 shares May 31</div>
+      </div>
+      <div class="rsu-prog">
+        <div class="rsu-lbl"><span>FY23 — 81 shares (Aug 2023)</span><span class="warn">49% vested</span></div>
+        <div class="prog-wrap"><div class="prog-fill" style="width:49%;background:var(--amber)"></div></div>
+        <div style="font-size:11px;color:var(--text3)">40 vested · 41 remaining ($17,279) · next 4 shares May 31</div>
+      </div>
+      <div class="rsu-prog">
+        <div class="rsu-lbl"><span>FY24 — 70 shares (Aug 2024)</span><span class="neg">30% vested</span></div>
+        <div class="prog-wrap"><div class="prog-fill" style="width:30%;background:var(--red)"></div></div>
+        <div style="font-size:11px;color:var(--text3)">21 vested · 49 remaining ($20,651) · next 3 shares May 31</div>
+      </div>
+      <div class="rsu-prog">
+        <div class="rsu-lbl"><span>FY25 — 67 shares (Aug 2025)</span><span class="neg">9% vested</span></div>
+        <div class="prog-wrap"><div class="prog-fill" style="width:9%;background:var(--red)"></div></div>
+        <div style="font-size:11px;color:var(--text3)">6 vested · 61 remaining ($25,708) · next 4 shares May 31</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2026 PLAN -->
+  <div class="page" id="pg-plan">
+    <div class="page-header">
+      <div><div class="page-title">2026 Plan</div><div class="page-sub">Financial calendar &amp; targets</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Financial calendar</div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--red)"></div>
+        <div class="tl-date">Now</div>
+        <div class="tl-body">Clear CGD Gold card (~€1,200) from next salary. Apply 48hr rule to Temu. Check Apple not double-paying.</div>
+        <div class="tl-amt pos">+€20/mo</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--amber)"></div>
+        <div class="tl-date">May 31</div>
+        <div class="tl-body">RSU vest ~€6,960 → Romania trip+wedding €4,000 · ActivoBank CC partial €2,960</div>
+        <div class="tl-amt warn">€6,960</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--text2)"></div>
+        <div class="tl-date">Jul</div>
+        <div class="tl-body">ING RO credit card cleared from monthly surplus. Monthly payments reduce ~€150.</div>
+        <div class="tl-amt pos">+€150/mo</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--purple)"></div>
+        <div class="tl-date">Aug 31</div>
+        <div class="tl-body">RSU vest ~€6,570 → Casian school fees €8,500 due September. Gap covered by surplus.</div>
+        <div class="tl-amt warn">€8,500 due</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--blue)"></div>
+        <div class="tl-date">Oct</div>
+        <div class="tl-body">Paula SS exemption ends. Budget ~€200–300/mo SS. €700 IRS provision absorbs temporarily.</div>
+        <div class="tl-amt warn">SS starts</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--green)"></div>
+        <div class="tl-date">Nov 30</div>
+        <div class="tl-body">RSU vest ~€5,800 → clear ActivoBank CC entirely. Monthly position improves by €444.</div>
+        <div class="tl-amt pos">+€444/mo</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--amber)"></div>
+        <div class="tl-date">Dec</div>
+        <div class="tl-body">Annual bonus est. €6,000–11,000 → build fund + Paula ING credit lump sum.</div>
+        <div class="tl-amt pos">~€8k est.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--accent2)"></div>
+        <div class="tl-date">Q1 2027</div>
+        <div class="tl-body">Building permit approved → apply for auto-construção mortgage (CGD/BPI/Millennium). Monthly deficit now ~€388 — much stronger application.</div>
+        <div class="tl-amt pos">mortgage ready</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Monthly position improvement through 2026</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="positionChart" role="img" aria-label="Monthly position improving through 2026">Position improvement chart</canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">2026 targets</div>
+      <div class="data-row"><span class="data-label">CGD Gold card</span><span><span class="tag tag-green">clear now</span></span></div>
+      <div class="data-row"><span class="data-label">ING RO credit card</span><span><span class="tag tag-green">clear Jul 2026</span></span></div>
+      <div class="data-row"><span class="data-label">ActivoBank Visa CC</span><span><span class="tag tag-green">clear Dec 2026</span></span></div>
+      <div class="data-row"><span class="data-label">Casian school fees</span><span><span class="tag tag-green">covered Aug RSU</span></span></div>
+      <div class="data-row"><span class="data-label">Romania trip + wedding</span><span><span class="tag tag-green">funded May RSU</span></span></div>
+      <div class="data-row"><span class="data-label">Paula SS provision</span><span><span class="tag tag-amber">budget from Oct 2026</span></span></div>
+      <div class="data-row"><span class="data-label">Build fund target</span><span><span class="tag tag-blue">€25–35k by Dec 2026</span></span></div>
+    </div>
+  </div>
+
+  <!-- UPLOAD STATEMENTS -->
+  <div class="page" id="pg-upload">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Upload statements</div>
+        <div class="page-sub">All banks must be uploaded for a month before regenerating the dashboard</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">Select month</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="uploadMonth" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none">
+          <option value="2026-04">April 2026</option>
+          <option value="2026-03">March 2026</option>
+          <option value="2026-02">February 2026</option>
+          <option value="2026-01">January 2026</option>
+          <option value="2025-12">December 2025</option>
+          <option value="2025-11">November 2025</option>
+          <option value="2025-10">October 2025</option>
+        </select>
+        <span style="font-size:12px;color:var(--text3)">Select the month these statements cover</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Bank statements — click to upload PDF or image</div>
+      <div class="upload-grid" id="uploadGrid"></div>
+
+      <div id="uploadProgress" style="margin-top:1rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:13px;color:var(--text2)">Upload progress</span>
+          <span id="uploadCount" style="font-family:var(--mono);font-size:12px;color:var(--text3)">0 / 8 uploaded</span>
+        </div>
+        <div class="prog-wrap" style="height:8px"><div class="prog-fill" id="uploadProg" style="width:0%;background:var(--accent)"></div></div>
+      </div>
+
+      <div style="margin-top:1.25rem;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeStatements()" disabled>
+          Analyze with AI
+        </button>
+        <button class="btn btn-ghost" onclick="clearMonthUploads()">Clear month</button>
+      </div>
+
+      <div class="analysis-log" id="analysisLog"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Upload history</div>
+      <div id="uploadHistory">
+        <div style="font-size:13px;color:var(--text3);text-align:center;padding:1rem">No statements uploaded yet</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI ADVISOR -->
+  <div class="page" id="pg-advisor">
+    <div class="page-header">
+      <div><div class="page-title">AI Advisor</div><div class="page-sub">Ask anything about your household finances</div></div>
+    </div>
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <div id="advisorMsgs" style="padding:1.25rem;min-height:300px;max-height:500px;overflow-y:auto;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(108,99,255,.2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--accent2);flex-shrink:0;font-family:var(--mono)">AI</div>
+          <div style="background:var(--bg3);border-radius:4px 12px 12px 12px;padding:10px 14px;font-size:13px;line-height:1.65;color:var(--text2);max-width:85%">
+            All your financial data is loaded. I know your income, all debts, RSU schedule, Paula's position, the Jemprestes build plan, and every spending category. Ask me anything.
+          </div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border);display:flex">
+        <textarea id="advisorInput" rows="1" placeholder="Ask about your finances..." style="flex:1;border:none;background:transparent;padding:12px 14px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;resize:none;max-height:120px;line-height:1.5" onkeydown="advisorKey(event)" oninput="autoResize(this)"></textarea>
+        <button onclick="advisorSend()" style="border:none;border-left:1px solid var(--border);background:none;padding:0 20px;color:var(--accent2);cursor:pointer;font-size:13px;font-family:var(--sans)">Send</button>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:1rem">
+      <button class="btn btn-ghost" style="font-size:12px" onclick="advisorAsk('What is my true monthly surplus after all fixed costs including rent and the €700 IRS provision?')">True monthly surplus?</button>
+      <button class="btn btn-ghost" style="font-size:12px" onclick="advisorAsk('Should I sell MSFT RSUs immediately when they vest or hold some? I have vests in May, Aug, Nov 2026.')">Sell vs hold RSUs</button>
+      <button class="btn btn-ghost" style="font-size:12px" onclick="advisorAsk('What PT auto-construção mortgage should I target for Jemprestes? Budget €250-300k, I have existing debts.')">PT construction mortgage</button>
+      <button class="btn btn-ghost" style="font-size:12px" onclick="advisorAsk('What business expenses can Paula deduct as a PT freelancer to reduce her IRS Categoria B base?')">Paula tax deductions</button>
+      <button class="btn btn-ghost" style="font-size:12px" onclick="advisorAsk('Model my household net worth in 5 years given RSU vesting, RO apartment appreciation, and Jemprestes build.')">5-year net worth</button>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-title">Settings</div>
+    <div class="modal-sub">Configure your API key and budget targets</div>
+
+    <div class="form-group">
+      <label class="form-label">Anthropic API Key</label>
+      <input type="password" class="form-input" id="apiKeyInput" placeholder="sk-ant-api03-...">
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">Get your key at console.anthropic.com · stored locally in your browser only</div>
+    </div>
+
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:1.5rem 0 .75rem">Monthly budget targets (€)</div>
+
+    <div class="grid-2" style="gap:10px;margin-bottom:1.25rem">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Groceries</label>
+        <input type="number" class="form-input" id="b_groceries" value="1000">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Restaurants</label>
+        <input type="number" class="form-input" id="b_restaurants" value="250">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Uber Eats</label>
+        <input type="number" class="form-input" id="b_ubereats" value="70">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Online shopping (Temu etc.)</label>
+        <input type="number" class="form-input" id="b_online" value="100">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Clothing</label>
+        <input type="number" class="form-input" id="b_clothing" value="200">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">DoTerra</label>
+        <input type="number" class="form-input" id="b_doterra" value="900">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Education (variable)</label>
+        <input type="number" class="form-input" id="b_education" value="200">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Subscriptions</label>
+        <input type="number" class="form-input" id="b_subscriptions" value="70">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────
+const BANKS = [
+  { id: 'cgd',        name: 'CGD',              sub: '🇵🇹 Portugal · main account' },
+  { id: 'activobank', name: 'ActivoBank',        sub: '🇵🇹 Portugal · loan + CC' },
+  { id: 'revolut',    name: 'Revolut',           sub: '🇵🇹🇷🇴 Passthrough / FX' },
+  { id: 'ing_cur',    name: 'ING RO Current',    sub: '🇷🇴 Romania · current' },
+  { id: 'ing_sav',    name: 'ING RO Savings',    sub: '🇷🇴 Romania · savings' },
+  { id: 'ing_cc',     name: 'ING RO Credit Card',sub: '🇷🇴 Romania · credit card' },
+  { id: 'unicredit',  name: 'Unicredit',         sub: '🇷🇴 Romania · mortgage' },
+  { id: 'cgd_gold',   name: 'CGD Gold Card',     sub: '🇵🇹 Portugal · CC ~€1,200' },
+];
+
+const CATEGORIES = [
+  { key: 'rent',          label: 'Rent + utilities',        color: '#ff5c5c', budget: null,  merchants: ['TRF CXDAPP'] },
+  { key: 'groceries',     label: 'Groceries & food',        color: '#22c87a', budget: 1000,  merchants: ['PINGO D','AUCHAN','LIDL','CONTINE','INTERMA','MER CARNE','MINIPRE','SUPERTO','MEU SUP','CELEIRO','MERCADO','GLEBA','O POMAR','GOODMART','MIX MARKT','HONEST'] },
+  { key: 'doterra',       label: 'DoTerra (wellness)',       color: '#b47cff', budget: 900,   merchants: ['DOTERRA'] },
+  { key: 'education',     label: 'Education (Casian)',       color: '#4a9eff', budget: 200,   merchants: ['BERTRAN','PAPELAR','LIVRARI','PORTO EDITORA','MA MAIS','CPA ACT EDUCAT'] },
+  { key: 'restaurants',   label: 'Restaurants & cafes',     color: '#f5a623', budget: 250,   merchants: ['RESTAUR','LA MAFI','BCM BRI','BUSSOLA','PAU CANELA','HONEST BRGR','SUSHI','MCDON','RES PLA','PASTEIS','SOHO','EMMECI','RISTORA'] },
+  { key: 'ubereats',      label: 'Uber Eats + Lime',        color: '#ff8c42', budget: 70,    merchants: ['UBER L','UBER EATS','LIME'] },
+  { key: 'transport',     label: 'Transport (travel Uber)', color: '#ba7517', budget: null,  merchants: ['UBER','VIA VERDE','VIAVERDE','BRISA'] },
+  { key: 'online',        label: 'Online shopping',         color: '#d85a30', budget: 100,   merchants: ['WWW.AMA','AMAZON','TEMU','EU.STOR','BAMBU','ETSY','LIVRARI'] },
+  { key: 'clothing',      label: 'Clothing & grooming',     color: '#378add', budget: 200,   merchants: ['SOLANGE','OYSHO','KIABI','HM PT','SKECHER','PEPCO','BOUTIQU','INTIMIS','AMORINO','SPRINGF','ZARA'] },
+  { key: 'health',        label: 'Health & medical',        color: '#d4537e', budget: null,  merchants: ['CUF','HOSPITAL','PHYSIOHUB','FARMACI','RECUPER','CLINICA','ANICURA'] },
+  { key: 'subscriptions', label: 'Subscriptions & tech',    color: '#3c3489', budget: 70,    merchants: ['NETFLIX','TESLA INC','MICROSO','SPOTIFY','YOUTUBE','APPLE','DIGI PORTUGAL','HPME'] },
+  { key: 'utilities',     label: 'Utilities (EDP/EPAL)',    color: '#5f5e5a', budget: null,  merchants: ['EDP','EPAL','TEJO AMB'] },
+  { key: 'cigarettes',    label: 'Cigarettes',              color: '#639922', budget: null,  merchants: [] },
+  { key: 'paula_ro',      label: 'Paula RO (fixed)',        color: '#888780', budget: null,  merchants: [] },
+  { key: 'debt',          label: 'Debt payments',           color: '#d4537e', budget: null,  merchants: ['PRESTACAO','PAGAMENTO CARTAO','PAG PRESTACAO','RAMBURSARE','ALIMENTARE CARD'] },
+  { key: 'fees',          label: 'Bank fees',               color: '#444441', budget: null,  merchants: ['MANUT CONTA','COMISSAO','TAXE SI COMISIOANE'] },
+];
+
+// Fixed Paula RO monthly costs (pre-loaded, no upload needed)
+const PAULA_RO_FIXED = {
+  credit: 450, therapy: 250, figma: 26, apple: 10, youtube: 11, baby: 3, bank: 2
+};
+const PAULA_RO_TOTAL = Object.values(PAULA_RO_FIXED).reduce((a,b)=>a+b,0); // 752
+
+let state = {
+  apiKey: '',
+  budgets: { groceries:1000, restaurants:250, ubereats:70, online:100, clothing:200, doterra:900, education:200, subscriptions:70 },
+  uploads: {}, // { 'YYYY-MM': { bankId: { name, type, content } } }
+  analyzed: {}, // { 'YYYY-MM': { categories: {}, total: 0, raw: [] } }
+  currentMonth: '2026-04',
+  advisorHistory: [],
+  advisorBusy: false,
+};
+
+// ── Init ───────────────────────────────────────────────────────────
+function init() {
+  loadState();
+  checkApiKey();
+  renderUploadGrid();
+  renderCatList();
+  renderMonthTabs();
+  renderDebts();
+  renderCharts();
+  updateUploadHistory();
+}
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem('mfin_state');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state = { ...state, ...parsed };
+    }
+  } catch(e) {}
+  // Load settings inputs
+  document.getElementById('apiKeyInput').value = state.apiKey || '';
+  Object.entries(state.budgets).forEach(([k,v]) => {
+    const el = document.getElementById('b_'+k);
+    if (el) el.value = v;
+  });
+}
+
+function saveState() {
+  try { localStorage.setItem('mfin_state', JSON.stringify(state)); } catch(e) {}
+}
+
+function checkApiKey() {
+  const banner = document.getElementById('noKeyBanner');
+  if (!state.apiKey) {
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+// ── Navigation ─────────────────────────────────────────────────────
+function nav(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('pg-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ── Settings ───────────────────────────────────────────────────────
+function openSettings() {
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+function saveSettings() {
+  state.apiKey = document.getElementById('apiKeyInput').value.trim();
+  ['groceries','restaurants','ubereats','online','clothing','doterra','education','subscriptions'].forEach(k => {
+    const el = document.getElementById('b_'+k);
+    if (el) state.budgets[k] = parseInt(el.value) || 0;
+  });
+  saveState();
+  checkApiKey();
+  renderCatList();
+  closeSettings();
+}
+
+// ── Upload Grid ─────────────────────────────────────────────────────
+function renderUploadGrid() {
+  const month = document.getElementById('uploadMonth').value;
+  const monthUploads = state.uploads[month] || {};
+  const grid = document.getElementById('uploadGrid');
+
+  grid.innerHTML = BANKS.map(bank => {
+    const uploaded = !!monthUploads[bank.id];
+    return `
+      <div class="bank-upload ${uploaded ? 'uploaded' : ''}" onclick="triggerUpload('${bank.id}','${month}')">
+        <div class="upload-indicator ${uploaded ? 'ui-ok' : 'ui-pending'}"></div>
+        <input type="file" class="bank-file-input" id="file_${bank.id}" accept=".pdf,image/*" onchange="handleFile('${bank.id}','${month}',this)">
+        <div class="bank-name">${bank.name}</div>
+        <div class="bank-country">${bank.sub}</div>
+        <div class="bank-status ${uploaded ? 'ok' : 'pending'}">
+          ${uploaded ? '✓ ' + monthUploads[bank.id].name : 'Click to upload PDF or image'}
+        </div>
+      </div>`;
+  }).join('');
+
+  updateUploadProgress(month);
+}
+
+function triggerUpload(bankId, month) {
+  document.getElementById('file_'+bankId).click();
+}
+
+async function handleFile(bankId, month, input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  if (!state.uploads[month]) state.uploads[month] = {};
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    state.uploads[month][bankId] = {
+      name: file.name,
+      type: file.type,
+      content: e.target.result,
+      uploadedAt: new Date().toISOString()
+    };
+    saveState();
+    renderUploadGrid();
+    updateUploadHistory();
+  };
+
+  if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+    reader.readAsDataURL(file);
+  } else {
+    reader.readAsText(file);
+  }
+}
+
+function updateUploadProgress(month) {
+  const monthUploads = state.uploads[month] || {};
+  const count = Object.keys(monthUploads).length;
+  const total = BANKS.length;
+  document.getElementById('uploadCount').textContent = `${count} / ${total} uploaded`;
+  document.getElementById('uploadProg').style.width = `${Math.round(count/total*100)}%`;
+
+  const btn = document.getElementById('analyzeBtn');
+  // Enable if at least 2 banks uploaded and API key set
+  btn.disabled = !(count >= 2 && state.apiKey);
+  if (!state.apiKey) btn.title = 'Add API key in Settings first';
+}
+
+function clearMonthUploads() {
+  const month = document.getElementById('uploadMonth').value;
+  if (confirm(`Clear all uploads for ${month}?`)) {
+    delete state.uploads[month];
+    delete state.analyzed[month];
+    saveState();
+    renderUploadGrid();
+    updateUploadHistory();
+  }
+}
+
+// ── Analysis ───────────────────────────────────────────────────────
+async function analyzeStatements() {
+  const month = document.getElementById('uploadMonth').value;
+  const monthUploads = state.uploads[month] || {};
+  const uploadedBanks = Object.entries(monthUploads);
+
+  if (!state.apiKey) { openSettings(); return; }
+
+  const log = document.getElementById('analysisLog');
+  log.classList.add('show');
+  log.innerHTML = '';
+
+  function logLine(msg, type='') {
+    log.innerHTML += `<div class="log-line ${type}">${msg}</div>`;
+    log.scrollTop = log.scrollHeight;
+  }
+
+  document.getElementById('analyzeBtn').disabled = true;
+  logLine(`Starting analysis for ${month}...`, 'info');
+  logLine(`Processing ${uploadedBanks.length} bank statements...`);
+
+  const MERCHANT_MAP = `
+MERCHANT MAPPINGS (use these for categorization):
+- TRF CXDAPP 2477 = RENT (€2,477 fixed monthly to landlord Ricardo Alves)
+- TRF CXDAPP (other amounts) = utilities/hot water to landlord
+- DOTERRA = DoTerra personal wellness
+- BERTRAN = Books/education (bookstore)
+- SOLANGE = Barber/grooming (NOT clothing)
+- PAPELAR small amounts (€8-12) = Casian magazines/newspapers
+- PAPELAR large amounts (€50-100) = Cigarettes
+- CPA ACT EDUCAT = Casian school optionals
+- KIWOKO/KIMOKO = Pet supplies (turtle, minimal)
+- EU.STOR/BAMBU = Bambu Lab 3D printer/filament
+- C GOLD = CGD Gold credit card payment (NOT gold purchase)
+- MARVILA BJJ = BJJ membership €90/mo (sport)
+- TRF POUP PROGRAMA DA = Paula IRS tax provision savings €700/mo
+- UBER L = Uber Eats delivery fee
+- UBER EC/UBER E = Uber abroad/travel
+- UBER (large €37-80) = likely Uber Eats food order
+- LIME = Lime scooter trips
+- MICROSO small (€1-9) = Minecraft / Microsoft subscriptions
+- NETFLIX = Netflix subscription
+- TESLA INC = Tesla app subscription
+- DIGI PORTUGAL = Internet (now cancelled, may still appear)
+- HPME SA = Home security subscription
+- NOS = Internet (cancelled, should not appear)
+- HONEST = Household/baby products (groceries category)
+- PHYSIOHUB = Physio/health
+- ANICURA = Vet (turtle now, minimal cost)
+- VIA VERDE/VIAVERDE = Toll roads (Audi Q2)
+- MANUT CONTA PACOTE CA = Bank account maintenance fee
+- PAG PRESTACAO EMP 3547870072 = ActivoBank personal loan payment
+- VIS PAGAMENTO CARTAO = ActivoBank CC minimum payment
+- TRF P/ American express = Amex one-off payment
+- MUNICIPIO FERREIRA = Building permit payment (Jemprestes project)
+- EPAL = Water bill
+- EDP = Electricity
+- TEJO AMBIENTE = Waste/environment fee
+
+DO NOT CATEGORIZE as expenses (these are internal transfers):
+- TRF P/ GHEORGHE RAZVAN MITESCU (to own accounts)
+- TRF DE PoupeUp (internal savings transfers)
+- TRF MSFT Lda (salary income)
+- TRF FULLSCREEN DIGITA (Paula income)
+- TFI Razvan Activo/Mitescu (own transfers)
+- Exchanged to RON/EUR (FX, not spending)
+- Incasare / TFI GHEORGHE RAZVAN M credits (income)
+- ALOCATIA DE STAT COPII (child allowance income)
+
+PAULA FIXED RO COSTS (pre-loaded, add these automatically):
+- ING credit repayment: €450
+- Therapy: €250
+- Figma: €26
+- Apple: €10
+- YouTube: €11
+- Baby clothes (Hainute Prematuri): €3
+- ING fee: €2
+- Total Paula RO: €752/mo`;
+
+  try {
+    // Build messages with file content
+    const messages = [];
+    let userContent = [];
+
+    userContent.push({
+      type: 'text',
+      text: `Analyze these bank statements for ${month} and extract all EXPENSES by category. 
+
+${MERCHANT_MAP}
+
+For each category return:
+- Total amount spent
+- List of transactions (date, description, amount)
+
+Return ONLY valid JSON in this format:
+{
+  "month": "${month}",
+  "categories": {
+    "rent": { "total": 0, "transactions": [] },
+    "groceries": { "total": 0, "transactions": [] },
+    "doterra": { "total": 0, "transactions": [] },
+    "education": { "total": 0, "transactions": [] },
+    "restaurants": { "total": 0, "transactions": [] },
+    "ubereats": { "total": 0, "transactions": [] },
+    "transport": { "total": 0, "transactions": [] },
+    "online": { "total": 0, "transactions": [] },
+    "clothing": { "total": 0, "transactions": [] },
+    "health": { "total": 0, "transactions": [] },
+    "subscriptions": { "total": 0, "transactions": [] },
+    "utilities": { "total": 0, "transactions": [] },
+    "cigarettes": { "total": 0, "transactions": [] },
+    "paula_ro": { "total": 752, "transactions": [{"date":"fixed","desc":"Paula RO fixed obligations","amount":752}] },
+    "debt": { "total": 0, "transactions": [] },
+    "fees": { "total": 0, "transactions": [] }
+  },
+  "notes": "any observations about this month"
+}`
+    });
+
+    // Add each uploaded file
+    for (const [bankId, fileData] of uploadedBanks) {
+      logLine(`  Loading ${BANKS.find(b=>b.id===bankId)?.name || bankId}...`);
+
+      if (fileData.content.startsWith('data:image/')) {
+        const base64 = fileData.content.split(',')[1];
+        const mimeType = fileData.type;
+        userContent.push({ type: 'image', source: { type: 'base64', media_type: mimeType, data: base64 } });
+      } else if (fileData.content.startsWith('data:application/pdf')) {
+        const base64 = fileData.content.split(',')[1];
+        userContent.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } });
+      } else {
+        userContent.push({ type: 'text', text: `=== ${BANKS.find(b=>b.id===bankId)?.name} Statement ===\n${fileData.content}` });
+      }
+    }
+
+    messages.push({ role: 'user', content: userContent });
+
+    logLine('Sending to Claude AI for analysis...', 'info');
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': state.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        system: 'You are a financial data extraction assistant. Extract expenses from bank statements and return ONLY valid JSON with no markdown formatting, no backticks, no explanation.',
+        messages
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || `API error ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.content[0]?.text || '';
+
+    logLine('Processing AI response...', 'info');
+
+    // Parse JSON from response
+    let clean = text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    const parsed = JSON.parse(clean);
+
+    state.analyzed[month] = parsed;
+    saveState();
+
+    const total = Object.values(parsed.categories).reduce((s,c) => s + (c.total||0), 0);
+    logLine(`✓ Analysis complete! Total expenses: €${Math.round(total).toLocaleString()}`, 'ok');
+    if (parsed.notes) logLine(`Notes: ${parsed.notes}`);
+
+    renderMonthTabs();
+    renderCatList();
+
+  } catch(e) {
+    logLine(`Error: ${e.message}`, 'err');
+    if (e.message.includes('401')) logLine('Invalid API key — check Settings', 'err');
+  }
+
+  document.getElementById('analyzeBtn').disabled = false;
+}
+
+// ── Category list ──────────────────────────────────────────────────
+function renderCatList() {
+  const list = document.getElementById('catList');
+  const month = state.currentMonth;
+  const data = state.analyzed[month];
+
+  // Use analyzed data if available, else use baseline estimates
+  const baseline = {
+    rent: 2592, groceries: 970, doterra: 806, education: 978,
+    restaurants: 187, ubereats: 170, transport: 83, online: 193,
+    clothing: 210, health: 120, subscriptions: 60, utilities: 115,
+    cigarettes: 100, paula_ro: 752, debt: 1460, fees: 19
+  };
+
+  const amounts = data ? Object.fromEntries(
+    Object.entries(data.categories).map(([k,v]) => [k, v.total])
+  ) : baseline;
+
+  const total = Object.values(amounts).reduce((s,v)=>s+(v||0),0);
+  const maxAmt = Math.max(...Object.values(amounts));
+
+  list.innerHTML = CATEGORIES.map(cat => {
+    const amt = amounts[cat.key] || 0;
+    const pct = total > 0 ? Math.round(amt/total*100) : 0;
+    const barW = maxAmt > 0 ? Math.round(amt/maxAmt*100) : 0;
+
+    let pillHtml = '';
+    if (cat.budget) {
+      const ratio = amt / cat.budget;
+      if (ratio <= 0.8) pillHtml = `<span class="budget-pill bp-ok">€${Math.round(amt)} / €${cat.budget}</span>`;
+      else if (ratio <= 1.0) pillHtml = `<span class="budget-pill bp-warn">€${Math.round(amt)} / €${cat.budget}</span>`;
+      else pillHtml = `<span class="budget-pill bp-over">€${Math.round(amt)} OVER €${cat.budget}</span>`;
+    } else {
+      pillHtml = `<span class="budget-pill bp-na">fixed</span>`;
+    }
+
+    return `
+      <div class="cat-item">
+        <div class="cat-dot" style="background:${cat.color}"></div>
+        <div style="flex:1">
+          <div class="cat-name">${cat.label}</div>
+        </div>
+        ${pillHtml}
+        <div class="cat-bar-wrap"><div class="cat-bar" style="width:${barW}%;background:${cat.color}"></div></div>
+        <div class="cat-amount" style="color:${cat.color}">€${Math.round(amt).toLocaleString()}</div>
+        <div class="cat-pct">${pct}%</div>
+      </div>`;
+  }).join('');
+}
+
+// ── Month tabs ─────────────────────────────────────────────────────
+const MONTHS = ['2026-04','2026-03','2026-02','2026-01','2025-12','2025-11','2025-10'];
+const MONTH_LABELS = {
+  '2026-04':'Apr 26','2026-03':'Mar 26','2026-02':'Feb 26','2026-01':'Jan 26',
+  '2025-12':'Dec 25','2025-11':'Nov 25','2025-10':'Oct 25'
+};
+
+function renderMonthTabs() {
+  const tabs = document.getElementById('monthTabs');
+  tabs.innerHTML = MONTHS.map(m => {
+    const hasData = !!state.analyzed[m];
+    const isActive = m === state.currentMonth;
+    return `<button class="month-tab ${isActive?'active':''} ${hasData&&!isActive?'has-data':''}" onclick="selectMonth('${m}')">${MONTH_LABELS[m]}${hasData?' ✓':''}</button>`;
+  }).join('');
+}
+
+function selectMonth(month) {
+  state.currentMonth = month;
+  renderMonthTabs();
+  renderMonthDetail(month);
+  renderCatList();
+}
+
+function renderMonthDetail(month) {
+  const detail = document.getElementById('monthDetail');
+  const data = state.analyzed[month];
+  const uploads = state.uploads[month] || {};
+  const uploadCount = Object.keys(uploads).length;
+
+  if (!data) {
+    const missingBanks = BANKS.filter(b => !uploads[b.id]).map(b => b.name);
+    detail.innerHTML = `
+      <div class="alert ${uploadCount > 0 ? 'alert-warn' : 'alert-info'}">
+        <span>${uploadCount > 0 ? '⚠' : 'ℹ'}</span>
+        <div>
+          ${uploadCount > 0
+            ? `${uploadCount} of ${BANKS.length} banks uploaded. Missing: ${missingBanks.join(', ')}. Upload all statements then click "Analyze with AI".`
+            : `No statements uploaded for ${MONTH_LABELS[month]}. Go to Upload Statements to add your bank PDFs.`
+          }
+        </div>
+      </div>`;
+    return;
+  }
+
+  const total = Object.values(data.categories).reduce((s,c)=>s+(c.total||0),0);
+
+  detail.innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Total spend</div><div class="kpi-value neg">€${Math.round(total).toLocaleString()}</div></div>
+      <div class="kpi"><div class="kpi-label">vs budget</div><div class="kpi-value ${total > 10690 ? 'neg':'pos'}">€${Math.abs(Math.round(total - 10690)).toLocaleString()} ${total > 10690 ? 'over':'under'}</div></div>
+      <div class="kpi"><div class="kpi-label">Largest category</div><div class="kpi-value" style="font-size:14px">${getLargestCat(data.categories)}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Breakdown — ${MONTH_LABELS[month]}</div>
+      ${CATEGORIES.map(cat => {
+        const catData = data.categories[cat.key];
+        const amt = catData?.total || 0;
+        if (amt === 0) return '';
+        const budget = state.budgets[cat.key.replace('ubereats','ubereats')] || state.budgets[cat.key];
+        let pill = '';
+        if (budget) {
+          const r = amt/budget;
+          pill = r > 1
+            ? `<span class="tag tag-red">over €${budget} budget</span>`
+            : r > 0.8
+            ? `<span class="tag tag-amber">near limit</span>`
+            : `<span class="tag tag-green">on track</span>`;
+        }
+        return `<div class="data-row">
+          <span style="display:flex;align-items:center;gap:8px">
+            <span style="width:8px;height:8px;border-radius:50%;background:${cat.color};display:inline-block;flex-shrink:0"></span>
+            <span class="data-label">${cat.label}</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:8px">${pill}<span class="data-value" style="color:${cat.color}">€${Math.round(amt).toLocaleString()}</span></span>
+        </div>`;
+      }).join('')}
+    </div>
+    ${data.notes ? `<div class="alert alert-info"><span>ℹ</span>${data.notes}</div>` : ''}`;
+}
+
+function getLargestCat(cats) {
+  let max = 0, name = '-';
+  Object.entries(cats).forEach(([k,v]) => {
+    if (v.total > max) { max = v.total; name = CATEGORIES.find(c=>c.key===k)?.label || k; }
+  });
+  return name;
+}
+
+// ── Upload History ─────────────────────────────────────────────────
+function updateUploadHistory() {
+  const hist = document.getElementById('uploadHistory');
+  const entries = Object.entries(state.uploads);
+  if (entries.length === 0) {
+    hist.innerHTML = '<div style="font-size:13px;color:var(--text3);text-align:center;padding:1rem">No statements uploaded yet</div>';
+    return;
+  }
+
+  hist.innerHTML = entries.sort((a,b)=>b[0].localeCompare(a[0])).map(([month, banks]) => {
+    const count = Object.keys(banks).length;
+    const analyzed = !!state.analyzed[month];
+    return `<div class="data-row">
+      <span class="data-label">${MONTH_LABELS[month] || month}</span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:var(--text3)">${count}/${BANKS.length} banks</span>
+        ${analyzed ? '<span class="tag tag-green">analyzed</span>' : '<span class="tag tag-amber">pending</span>'}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+// ── Debts ──────────────────────────────────────────────────────────
+const DEBTS = [
+  { name:'CGD Gold credit card', balance:1200, rate:'~20%', monthly:36, interest:20, color:'#ff5c5c', priority:1, note:'Clear from next salary — easiest win' },
+  { name:'ActivoBank Visa CC', balance:9519, rate:'~20%', monthly:285, interest:159, color:'#ff5c5c', priority:2, note:'May RSU partial → Nov RSU clears entirely' },
+  { name:'ING RO credit card', balance:1360, rate:'~18%', monthly:150, interest:25, color:'#f5a623', priority:3, note:'Clear from monthly surplus by Jul 2026' },
+  { name:'ActivoBank personal loan', balance:6810, rate:'9.25%', monthly:142, interest:52, color:'#ba7517', priority:4, note:'5yr 1mo remaining · keep paying normally' },
+  { name:'Paula ING credit (RO)', balance:20000, rate:'est.10%', monthly:450, interest:167, color:'#888780', priority:5, note:'~4yr payoff · reassess after CC cleared' },
+  { name:'Unicredit mortgage (RO)', balance:72842, rate:'4.95%', monthly:433, interest:300, color:'#5f5e5a', priority:6, note:'Maintain · no overpayment needed yet' },
+  { name:'Brother loan', balance:6000, rate:'0%', monthly:0, interest:0, color:'#444441', priority:7, note:'No rush · parked in ActivoBank PoupeUp' },
+];
+
+function renderDebts() {
+  const list = document.getElementById('debtList');
+  const maxBal = Math.max(...DEBTS.map(d=>d.balance));
+  list.innerHTML = DEBTS.map(d => `
+    <div class="debt-item">
+      <div class="debt-header">
+        <span class="debt-name">${d.priority}. ${d.name}</span>
+        <span class="data-value" style="color:${d.color}">€${d.balance.toLocaleString()}</span>
+      </div>
+      <div class="prog-wrap"><div class="prog-fill" style="width:${Math.round(d.balance/maxBal*100)}%;background:${d.color}"></div></div>
+      <div class="debt-meta">${d.rate} APR · €${d.monthly}/mo payment · ~€${d.interest}/mo interest · ${d.note}</div>
+    </div>`).join('');
+}
+
+// ── Charts ─────────────────────────────────────────────────────────
+function renderCharts() {
+  // P&L chart
+  new Chart(document.getElementById('plChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26'],
+      datasets: [
+        { label:'Income', data:[19121,9705,15646,10326,10863,12232], backgroundColor:'rgba(34,200,122,.7)', borderRadius:4, borderSkipped:false },
+        { label:'Outflows', data:[-10690,-10690,-10690,-10690,-10690,-10690], backgroundColor:'rgba(255,92,92,.5)', borderRadius:4, borderSkipped:false }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>'€'+Math.abs(ctx.parsed.y).toLocaleString()}} },
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#8888a0',font:{size:11}} },
+        y:{ grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#8888a0',font:{size:11},callback:v=>'€'+Math.abs(v).toLocaleString()} }
+      }
+    }
+  });
+
+  // Spend chart
+  const catData = CATEGORIES.map(c => ({ label:c.label, color:c.color, val: getBaselineAmt(c.key) }))
+    .filter(c=>c.val>0).sort((a,b)=>b.val-a.val);
+
+  new Chart(document.getElementById('spendChart'), {
+    type:'bar',
+    data:{
+      labels: catData.map(c=>c.label),
+      datasets:[{ data:catData.map(c=>c.val), backgroundColor:catData.map(c=>c.color), borderRadius:3, borderSkipped:false }]
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'€'+ctx.parsed.x.toLocaleString()}}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8888a0',font:{size:11},callback:v=>'€'+v.toLocaleString()}},
+        y:{grid:{display:false},ticks:{color:'#8888a0',font:{size:11}}}
+      }
+    }
+  });
+
+  // Savings waterfall
+  new Chart(document.getElementById('savingsChart'), {
+    type:'bar',
+    data:{
+      labels:['Current\ndeficit','+ Clear\nCC debt','+ Uber\nEats cut','+ Temu\ncontrol','+ Apple\ncheck','Improved\ndeficit'],
+      datasets:[{data:[-832,-653,-583,-513,-503,-388],backgroundColor:['#ff5c5c','#f5a623','#ba7517','#7F77DD','#4a9eff','#22c87a'],borderRadius:4}]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'€'+ctx.parsed.y.toLocaleString()}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#8888a0',font:{size:10}}},
+        y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8888a0',font:{size:11},callback:v=>'€'+Math.abs(v).toLocaleString()}}
+      }
+    }
+  });
+
+  // Position improvement
+  new Chart(document.getElementById('positionChart'), {
+    type:'line',
+    data:{
+      labels:['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan 27'],
+      datasets:[
+        {label:'Monthly deficit',data:[-832,-832,-782,-632,-632,-632,-632,-632,-388,-388],borderColor:'#ff5c5c',backgroundColor:'rgba(255,92,92,.06)',fill:true,tension:0.3,pointRadius:4,pointBackgroundColor:'#ff5c5c'},
+        {label:'Break even',data:Array(10).fill(0),borderColor:'rgba(34,200,122,.4)',borderDash:[5,5],pointRadius:0,fill:false}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'€'+Math.abs(ctx.parsed.y).toLocaleString()}}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8888a0',font:{size:11}}},
+        y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8888a0',font:{size:11},callback:v=>'€'+Math.abs(v).toLocaleString()},max:100,min:-1000}
+      }
+    }
+  });
+}
+
+function getBaselineAmt(key) {
+  const baseline = {
+    rent:2592, groceries:970, doterra:806, education:978, restaurants:187,
+    ubereats:170, transport:83, online:193, clothing:210, health:120,
+    subscriptions:60, utilities:115, cigarettes:100, paula_ro:752, debt:1460, fees:19
+  };
+  return baseline[key] || 0;
+}
+
+// ── AI Advisor ─────────────────────────────────────────────────────
+const ADVISOR_SYSTEM = `You are a personal financial analyst for Razvan Mitescu, a Senior Support Engineering Manager at Microsoft based in Portugal. You have complete knowledge of his household finances.
+
+HOUSEHOLD PROFILE:
+- Razvan: MSFT Sr Manager, PT tax resident (NHR regime). Net salary ~€5,300/mo (non-bonus months).
+- Paula (wife): PT tax resident, freelancer since Oct 2025, FullScreen Digital, €3,500/mo gross. SS exempt year 1 (to Oct 2026).
+- Child: Casian. School fees €8,500/yr (Sep) + €457/3mo optionals.
+- RO rental: Corbeanca apartment, Bogdan Popa tenant, €1,000/mo, 5-year contract to ~2031.
+- House build: Jemprestes, Ferreira do Zêzere, PT. €250-300k budget, ~2yr build, permit pending.
+
+MONTHLY INCOME: ~€9,858 gross (Razvan €5,300 + Paula €3,500 + rental €1,000 + child allowance €58)
+MONTHLY OUTFLOWS: ~€10,690 (rent €2,477 + utilities €115 + groceries €970 + DoTerra €806 + education €978 + debts €1,460 + paula RO €752 + IRS provision €700 + restaurants €187 + uber eats €170 + clothing €210 + online €193 + BJJ €90 + cigarettes €100 + subscriptions €60 + utilities €115 + via verde €83 + oshin €95 + fees €19)
+MONTHLY DEFICIT: ~€832 (covered by RSU vests + annual bonus)
+
+DEBTS (priority order): CGD Gold CC €1,200 ~20%, ActivoBank Visa CC €9,519 ~20%, ING RO CC €1,360, ActivoBank loan €6,810 @9.25% €141/mo, Paula ING credit €20,000 €450/mo, Unicredit mortgage €72,842 @4.95% €432/mo, Brother loan €6,000 0% no rush.
+
+RSU: 184 shares $77,545 unvested. May 31: 18sh ~€6,960 (trip+wedding €4k, CC €2.96k). Aug 31: 17sh ~€6,570 (Casian school €8,500). Nov 30: 15sh ~€5,800 (clear ActivoBank CC entirely).
+
+Be concise, precise, and reference actual numbers. Max 4 paragraphs unless detailed breakdown requested.`;
+
+async function advisorSend() {
+  const input = document.getElementById('advisorInput');
+  const q = input.value.trim();
+  if (!q || state.advisorBusy) return;
+  if (!state.apiKey) { openSettings(); return; }
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  addAdvisorMsg('user', q);
+  state.advisorHistory.push({ role:'user', content:q });
+  state.advisorBusy = true;
+
+  const typing = addAdvisorMsg('ai', '...', true);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': state.apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system: ADVISOR_SYSTEM,
+        messages: state.advisorHistory.slice(-20)
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || `API error ${res.status}`);
+
+    const reply = data.content[0]?.text || 'No response received.';
+    typing.textContent = reply;
+    state.advisorHistory.push({ role:'assistant', content:reply });
+    if (state.advisorHistory.length > 40) state.advisorHistory = state.advisorHistory.slice(-40);
+
+  } catch(e) {
+    typing.textContent = `Error: ${e.message}. Check your API key in Settings.`;
+    typing.style.color = 'var(--red)';
+  }
+
+  state.advisorBusy = false;
+}
+
+function addAdvisorMsg(role, text, isTyping=false) {
+  const msgs = document.getElementById('advisorMsgs');
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:10px;align-items:flex-start;' + (role==='user'?'flex-direction:row-reverse':'');
+  const av = document.createElement('div');
+  av.style.cssText = `width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;font-family:var(--mono);${role==='user'?'background:var(--accent);color:#fff':'background:rgba(108,99,255,.2);color:var(--accent2)'}`;
+  av.textContent = role === 'user' ? 'R' : 'AI';
+  const bubble = document.createElement('div');
+  bubble.style.cssText = `padding:10px 14px;font-size:13px;line-height:1.65;max-width:85%;white-space:pre-wrap;${role==='user'?'background:var(--accent);color:#fff;border-radius:12px 4px 12px 12px':'background:var(--bg3);color:var(--text2);border-radius:4px 12px 12px 12px'}`;
+  bubble.textContent = text;
+  div.appendChild(av);
+  div.appendChild(bubble);
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return bubble;
+}
+
+function advisorAsk(q) {
+  document.getElementById('advisorInput').value = q;
+  advisorSend();
+  nav('advisor', document.querySelectorAll('.nav-item')[8]);
+}
+
+function advisorKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); advisorSend(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// Month change listener
+document.getElementById('uploadMonth').addEventListener('change', () => {
+  renderUploadGrid();
+});
+
+// Init
+init();
+</script>
+</body>
+</html>
